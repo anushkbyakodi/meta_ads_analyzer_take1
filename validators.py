@@ -7,22 +7,29 @@ class ExcelValidator:
     """Validates Excel files for campaign data structure and content."""
     
     REQUIRED_COLUMNS = [
-        'account_id',
-        'campaign_id', 
-        'date',
-        'spend',
-        'impressions',
-        'clicks'
+        'Campaign name',
+        'Reporting starts',
+        'Amount spent (INR)',
+        'Impressions',
+        'Link clicks'
     ]
     
     OPTIONAL_COLUMNS = [
-        'purchases',
-        'revenue',
-        'ad_id',
-        'ad_name',
-        'campaign_name',
-        'objective',
-        'creative_id'
+        'Results',
+        'Result indicator',
+        'Reach',
+        'Frequency',
+        'Cost per results',
+        'Reporting ends',
+        'Campaign Delivery',
+        'Attribution setting',
+        'shop_clicks',
+        'Clicks (all)',
+        'CTR (link click-through rate)',
+        'CTR (all)',
+        'CPC (cost per link click) (INR)',
+        'CPC (all) (INR)',
+        'CPM (cost per 1,000 impressions) (INR)'
     ]
     
     def __init__(self):
@@ -108,12 +115,12 @@ class ExcelValidator:
         if empty_rows > 0:
             self.warnings.append(f"{empty_rows} completely empty rows found")
         
-        # Validate numeric columns
-        numeric_columns = ['spend', 'impressions', 'clicks']
-        if 'purchases' in df_norm.columns:
-            numeric_columns.append('purchases')
-        if 'revenue' in df_norm.columns:
-            numeric_columns.append('revenue')
+        # Validate numeric columns (using the new column names)
+        numeric_columns = ['amount spent (inr)', 'impressions', 'link clicks']
+        if 'results' in df_norm.columns:
+            numeric_columns.append('results')
+        if 'reach' in df_norm.columns:
+            numeric_columns.append('reach')
         
         for col in numeric_columns:
             if col in df_norm.columns:
@@ -122,25 +129,23 @@ class ExcelValidator:
                     df_norm[col] = pd.to_numeric(df_norm[col], errors='coerce')
                 
                 # Check for negative values where they shouldn't be
-                if col in ['spend', 'impressions', 'clicks'] and (df_norm[col] < 0).any():
+                if col in ['amount spent (inr)', 'impressions', 'link clicks'] and (df_norm[col] < 0).any():
                     self.errors.append(f"Negative values found in {col} column")
                     return False
         
         # Validate date column
-        if 'date' in df_norm.columns:
+        if 'reporting starts' in df_norm.columns:
             try:
-                pd.to_datetime(df_norm['date'], errors='raise')
+                pd.to_datetime(df_norm['reporting starts'], errors='raise')
             except:
-                self.errors.append("Date column contains invalid date formats")
+                self.errors.append("Reporting starts column contains invalid date formats")
                 return False
         
-        # Validate ID columns are not empty
-        id_columns = ['account_id', 'campaign_id']
-        for col in id_columns:
-            if col in df_norm.columns:
-                if df_norm[col].isnull().any():
-                    self.errors.append(f"{col} column contains empty values")
-                    return False
+        # Validate campaign name is not empty (our main identifier)
+        if 'campaign name' in df_norm.columns:
+            if df_norm['campaign name'].isnull().any():
+                self.errors.append("Campaign name column contains empty values")
+                return False
         
         return True
     
@@ -161,16 +166,16 @@ class ExcelValidator:
             self.warnings.append(f"{duplicate_count} duplicate rows found")
         
         # Check for unrealistic values
-        if 'spend' in df_norm.columns and 'clicks' in df_norm.columns:
+        if 'amount spent (inr)' in df_norm.columns and 'link clicks' in df_norm.columns:
             # Check for very high CPC (might indicate data quality issues)
-            df_norm['temp_cpc'] = df_norm['spend'] / df_norm['clicks'].replace(0, np.nan)
-            high_cpc_count = (df_norm['temp_cpc'] > 100).sum()
+            df_norm['temp_cpc'] = df_norm['amount spent (inr)'] / df_norm['link clicks'].replace(0, np.nan)
+            high_cpc_count = (df_norm['temp_cpc'] > 1000).sum()  # Adjusted for INR
             if high_cpc_count > 0:
-                self.warnings.append(f"{high_cpc_count} records with CPC > $100 (potential data quality issue)")
+                self.warnings.append(f"{high_cpc_count} records with CPC > ₹1000 (potential data quality issue)")
         
-        if 'impressions' in df_norm.columns and 'clicks' in df_norm.columns:
+        if 'impressions' in df_norm.columns and 'link clicks' in df_norm.columns:
             # Check for CTR > 100% (impossible)
-            df_norm['temp_ctr'] = df_norm['clicks'] / df_norm['impressions'].replace(0, np.nan)
+            df_norm['temp_ctr'] = df_norm['link clicks'] / df_norm['impressions'].replace(0, np.nan)
             impossible_ctr = (df_norm['temp_ctr'] > 1).sum()
             if impossible_ctr > 0:
-                self.errors.append(f"{impossible_ctr} records with clicks > impressions (impossible)")
+                self.errors.append(f"{impossible_ctr} records with link clicks > impressions (impossible)")

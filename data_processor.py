@@ -8,19 +8,25 @@ class DataProcessor:
     
     def __init__(self):
         self.column_mapping = {
-            'account_id': 'account_id',
-            'campaign_id': 'campaign_id', 
-            'date': 'date',
-            'spend': 'spend',
+            # Map your Excel columns to our standard schema
+            'campaign name': 'campaign_name',
+            'reporting starts': 'date', 
+            'amount spent (inr)': 'spend',
             'impressions': 'impressions',
-            'clicks': 'clicks',
-            'purchases': 'purchases',
-            'revenue': 'revenue',
-            'ad_id': 'ad_id',
-            'ad_name': 'ad_name',
-            'campaign_name': 'campaign_name',
-            'objective': 'objective',
-            'creative_id': 'creative_id'
+            'link clicks': 'clicks',
+            'results': 'purchases',
+            'reach': 'reach',
+            'frequency': 'frequency',
+            'cpm (cost per 1,000 impressions) (inr)': 'cpm_original',
+            'cpc (cost per link click) (inr)': 'cpc_original',
+            'ctr (link click-through rate)': 'ctr_original',
+            'clicks (all)': 'clicks_all',
+            'ctr (all)': 'ctr_all',
+            'cpc (all) (inr)': 'cpc_all',
+            'shop_clicks': 'shop_clicks',
+            'cost per results': 'cost_per_results',
+            'result indicator': 'result_indicator',
+            'campaign delivery': 'campaign_delivery'
         }
     
     def load_excel_data(self, uploaded_file):
@@ -74,8 +80,11 @@ class DataProcessor:
         # Validate data consistency
         processed_df = self._validate_data_consistency(processed_df)
         
+        # Generate missing required fields
+        processed_df = self._generate_missing_fields(processed_df)
+        
         # Sort by date and campaign
-        processed_df = processed_df.sort_values(['date', 'campaign_id']).reset_index(drop=True)
+        processed_df = processed_df.sort_values(['date', 'campaign_name']).reset_index(drop=True)
         
         st.success(f"Data processing complete: {len(processed_df)} records ready for analysis")
         
@@ -124,7 +133,7 @@ class DataProcessor:
                 df[col] = df[col].fillna(0)
         
         # Remove rows where required columns are missing
-        required_columns = ['account_id', 'campaign_id', 'date']
+        required_columns = ['campaign_name', 'date']
         for col in required_columns:
             if col in df.columns:
                 df = df.dropna(subset=[col])
@@ -142,7 +151,7 @@ class DataProcessor:
         initial_count = len(df)
         
         # Define columns for duplicate detection
-        duplicate_cols = ['account_id', 'campaign_id', 'date']
+        duplicate_cols = ['campaign_name', 'date']
         if 'ad_id' in df.columns:
             duplicate_cols.append('ad_id')
         
@@ -181,6 +190,37 @@ class DataProcessor:
                 df.loc[mask, 'purchases'] = 1
                 st.info(f"Set purchases = 1 for {mask.sum()} rows with revenue but no purchases")
         
+        return df
+    
+    def _generate_missing_fields(self, df):
+        """Generate missing required fields from available data."""
+        # Generate account_id (since your data doesn't have it, we'll create a default one)
+        if 'account_id' not in df.columns:
+            df['account_id'] = 'desky_account_001'
+        
+        # Generate campaign_id from campaign_name
+        if 'campaign_id' not in df.columns and 'campaign_name' in df.columns:
+            # Create simple ID from campaign name
+            df['campaign_id'] = df['campaign_name'].str.replace(' ', '_').str.lower() + '_' + df.index.astype(str)
+        
+        # Ensure we have purchases column (map from Results if available)
+        if 'purchases' not in df.columns:
+            if 'results' in df.columns:
+                df['purchases'] = df['results']
+            else:
+                df['purchases'] = 0
+        
+        # Add revenue column if not present (we don't have this in your data)
+        if 'revenue' not in df.columns:
+            df['revenue'] = 0
+        
+        # Add other standard fields if missing
+        if 'ad_id' not in df.columns:
+            df['ad_id'] = df['campaign_id'] + '_ad_' + df.index.astype(str)
+        
+        if 'ad_name' not in df.columns:
+            df['ad_name'] = df['campaign_name'] + ' - Ad'
+            
         return df
     
     def get_data_summary(self, df):

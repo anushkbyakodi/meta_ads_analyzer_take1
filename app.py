@@ -46,14 +46,16 @@ def main():
         st.markdown("---")
         st.markdown("**Required Excel Columns:**")
         st.markdown("""
-        - account_id
-        - campaign_id
-        - date
-        - spend
-        - impressions
-        - clicks
-        - purchases (optional)
-        - revenue (optional)
+        - Campaign name
+        - Reporting starts (date)
+        - Amount spent (INR)
+        - Impressions
+        - Link clicks
+        
+        **Optional Columns:**
+        - Results (conversions)
+        - Reach, Frequency
+        - CTR, CPC, CPM metrics
         """)
     
     # Step 1: Collect Inputs
