@@ -248,6 +248,16 @@ def process_kpis_and_insights(processed_data, relevance_api_key):
         # Data preview
         st.markdown("**Data Preview:**")
         st.dataframe(data.head(10), width='stretch')
+        
+        # JSON format display
+        st.markdown("**Data in JSON Format:**")
+        import json
+        
+        # Convert the first 5 rows to JSON for display
+        json_data = data.head(5).to_dict('records')
+        
+        # Display as formatted JSON
+        st.code(json.dumps(json_data, indent=2, default=str), language='json')
     
     # KPIs Section
     if st.session_state.kpis is not None:
