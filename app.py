@@ -5,10 +5,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 import traceback
+import os
 
 from data_processor import DataProcessor
 from kpi_calculator import KPICalculator
-from relevance_client import RelevanceClient
+from gpt_client import GPTClient
 from validators import ExcelValidator
 from meta_client import MetaAdsClient
 
@@ -37,10 +38,11 @@ def main():
     # Sidebar for configuration
     with st.sidebar:
         st.header("Configuration")
-        relevance_api_key = st.text_input(
-            "Relevance API Key",
+        openai_api_key = st.text_input(
+            "OpenAI API Key",
             type="password",
-            help="Enter your Relevance API key for insights generation"
+            help="Enter your OpenAI API key for GPT-powered insights generation",
+            value=os.getenv('OPENAI_API_KEY', '')
         )
         
         st.markdown("---")
@@ -147,7 +149,7 @@ def main():
                                     st.success(f"✅ Processed {len(processed_data)} records from Meta API")
                                     
                                     # Continue to KPI calculation
-                                    process_kpis_and_insights(processed_data, relevance_api_key)
+                                    process_kpis_and_insights(processed_data, openai_api_key)
                                     
                             except Exception as e:
                                 st.error(f"❌ Error fetching Meta data: {str(e)}")
@@ -195,13 +197,13 @@ def main():
                     st.success(f"✅ Processed {len(processed_data)} records")
                     
                     # Continue to KPI calculation
-                    process_kpis_and_insights(processed_data, relevance_api_key)
+                    process_kpis_and_insights(processed_data, openai_api_key)
                 
             except Exception as e:
                 st.error(f"❌ Error processing file: {str(e)}")
                 st.expander("Error details").code(traceback.format_exc())
 
-def process_kpis_and_insights(processed_data, relevance_api_key):
+def process_kpis_and_insights(processed_data, openai_api_key):
     """Helper function to process KPIs and generate insights."""
     
     # Step 4/5: Calculate KPIs
@@ -217,15 +219,15 @@ def process_kpis_and_insights(processed_data, relevance_api_key):
     # Step 5/6: Generate insights
     st.subheader("🤖 Step 5: Generate Insights")
     
-    if relevance_api_key:
-        with st.spinner("Generating AI insights..."):
-            relevance_client = RelevanceClient(relevance_api_key)
-            insights = relevance_client.generate_insights(kpis_data)
+    if openai_api_key:
+        with st.spinner("Generating GPT insights..."):
+            gpt_client = GPTClient(openai_api_key)
+            insights = gpt_client.generate_insights(kpis_data)
             st.session_state.insights = insights
         
-        st.success("✅ AI insights generated")
+        st.success("✅ GPT insights generated")
     else:
-        st.warning("⚠️ Please provide Relevance API key to generate insights")
+        st.warning("⚠️ Please provide OpenAI API key to generate insights")
 
     # Data Overview Section
     if st.session_state.processed_data is not None:
