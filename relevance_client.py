@@ -28,6 +28,14 @@ class RelevanceClient:
             # Prepare data summary for the API
             data_summary = self._prepare_data_summary(kpi_data)
             
+            # Print JSON data to console for debugging/reference
+            import json
+            print("=" * 50)
+            print("JSON DATA BEING SENT TO RELEVANCE API:")
+            print("=" * 50)
+            print(json.dumps(data_summary, indent=2, default=str))
+            print("=" * 50)
+            
             # Call Relevance API
             insights = self._call_relevance_api(data_summary)
             
@@ -219,7 +227,16 @@ class RelevanceClient:
     
     def _generate_fallback_insights(self, df):
         """Generate basic insights when API is unavailable."""
-        return self._generate_fallback_insights_from_summary(self._prepare_data_summary(df))
+        # Still print the JSON data even when using fallback
+        data_summary = self._prepare_data_summary(df)
+        import json
+        print("=" * 50)
+        print("JSON DATA THAT WOULD BE SENT TO RELEVANCE API (using fallback):")
+        print("=" * 50)
+        print(json.dumps(data_summary, indent=2, default=str))
+        print("=" * 50)
+        
+        return self._generate_fallback_insights_from_summary(data_summary)
     
     def _generate_fallback_insights_from_summary(self, summary):
         """Generate fallback insights from data summary."""

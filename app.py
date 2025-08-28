@@ -247,7 +247,7 @@ def process_kpis_and_insights(processed_data, relevance_api_key):
         
         # Data preview
         st.markdown("**Data Preview:**")
-        st.dataframe(data.head(10), use_container_width=True)
+        st.dataframe(data.head(10), width='stretch')
     
     # KPIs Section
     if st.session_state.kpis is not None:
@@ -310,7 +310,7 @@ def process_kpis_and_insights(processed_data, relevance_api_key):
         
         # Detailed KPIs table
         st.markdown("**Detailed KPIs:**")
-        st.dataframe(kpis, use_container_width=True)
+        st.dataframe(kpis, width='stretch')
     
     # Insights Section
     if st.session_state.insights is not None:

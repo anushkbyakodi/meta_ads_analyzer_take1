@@ -107,14 +107,20 @@ class DataProcessor:
         if 'date' in df.columns:
             df['date'] = pd.to_datetime(df['date'], errors='coerce')
         
-        # Convert numeric columns
-        numeric_columns = ['spend', 'impressions', 'clicks', 'purchases', 'revenue']
+        # Convert numeric columns (including the new column names)
+        numeric_columns = ['spend', 'impressions', 'clicks', 'purchases', 'revenue', 'results', 'reach', 'frequency']
         for col in numeric_columns:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 # Replace negative values with 0 for metrics that can't be negative
                 if col in ['impressions', 'clicks']:
                     df[col] = df[col].clip(lower=0)
+        
+        # Handle mixed data type columns that might cause Arrow conversion issues
+        string_columns = ['ad set budget', 'ad set budget type', 'campaign delivery', 'attribution setting', 'result indicator']
+        for col in string_columns:
+            if col in df.columns:
+                df[col] = df[col].astype(str)
         
         # Convert ID columns to string
         id_columns = ['account_id', 'campaign_id', 'ad_id', 'creative_id']
